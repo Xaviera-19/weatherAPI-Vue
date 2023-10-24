@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
+    <style>
+        #app {
+            display: flex;
+        }
+
+        .w-10 {
+            width: 10%;
+        }
+
+        img {
+            width: 100px;
+            height: 100px;
+        }
+
+        .row:nth-of-type(1) {
+            position: sticky;
+            top: 0;
+        }
+
+        .row:nth-of-type(2) {
+            overflow-y: scroll;
+            height: calc(100vh - 134px);
+
+            &::-webkit-scrollbar-thumb {
+                background: #5600f7;
+            }
+
+            &::-webkit-scrollbar {
+                width: 5px;
+                height: 8px;
+                background-color: #5600f781;
+            }
+        }
+
+    </style>
+</head>
+
+<body>
+    <div id="app">
+
+        <div class="container-xl">
+            <div id="btn" class="row justify-content-around p-5">
+                <button @click="setCity(0)" type="button" class="w-10 btn btn-outline-primary">全臺</button>
+                <button @click="setCity(1)" type="button" class="w-10 btn btn-outline-secondary">北部</button>
+                <button @click="setCity(2)" type="button" class="w-10 btn btn-outline-success">中部</button>
+                <button @click="setCity(3)" type="button" class="w-10 btn btn-outline-danger">南部</button>
+                <button @click="setCity(4)" type="button" class="w-10 btn btn-outline-warning">東部</button>
+                <button @click="setCity(5)" type="button" class="w-10 btn btn-outline-info">離島</button>
+            </div>
+            <div class="row ">
+                <!-- cityAll的地名  index  用btn來選擇我要拿到的地區    -->
+                <div v-for="(cityName, i) in cityAll[setIndex]" :key="i"
+                    class="col-12 col-sm-6 col-lg-4 col-xxl-3 mb-4">
+                    <div class="card">
+                        <div class="card-text fs-5">{{ cityName }}</div>
+                        <img v-bind:src="'./img/'+ orgData[cityName] ?.wx +'.svg'" class="card-img-top" alt="...">
+                        <div class="card-body">
+                            <p class="card-text m-1">開始時間 {{ orgData[cityName] ?.start }}</p>
+                            <p class="card-text m-1">結束時間 {{ orgData[cityName] ?.end }}</p>
+                            <p class="card-text m-1">天氣狀態 {{ orgData[cityName] ?.wx }}</p>
+                            <p class="card-text m-1">最高溫度 {{ orgData[cityName] ?.max }}℃</p>
+                            <p class="card-text m-1">最低溫度 {{ orgData[cityName] ?.min }}℃</p>
+                            <p class="card-text m-1">降雨機率 {{ orgData[cityName] ?.rain }}%</p>
+                            <p class="card-text m-1">舒適程度 {{ orgData[cityName] ?.ci }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script>
+        const { createApp } = Vue
+
+        createApp({
+            data() {
+                return {
+                    cityAll: [
+                        ["基隆市", "新北市", "臺北市", "桃園市", "新竹市", "新竹縣", "苗栗縣", "臺中市", "南投縣", "彰化縣", "雲林縣", "嘉義市", "嘉義縣", "臺南市", "高雄市", "屏東縣", "宜蘭縣", "花蓮縣", "臺東縣", "澎湖縣", "金門縣", "連江縣",],
+                        ["基隆市", "新北市", "臺北市", "桃園市", "新竹市", "新竹縣", "苗栗縣"],
+                        ["臺中市", "南投縣", "彰化縣", "雲林縣", "嘉義市", "嘉義縣"],
+                        ["臺南市", "高雄市", "屏東縣"],
+                        ["宜蘭縣", "花蓮縣", "臺東縣"],
+                        ["澎湖縣", "金門縣", "連江縣"],
+                    ],
+
+                    orgData: {},
+                    setIndex: 0,
+                }
+            },
+            mounted() {
+
+                let url = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=CWB-D0D651F6-2748-4302-8BF7-7FE978505CFC";
+
+                fetch(url)
+                    .then(response => response.json())
+                    .then(result => {
+                        // console.log(result);
+                        this.organizationData(result.records.location);
+
+                    });
+                // console.log(this.orgData);
+            },
+            methods: {
+                organizationData(item) {
+                    // console.log(item);
+                    item.forEach((data, index) => {
+                        // console.log(data);
+                        let oao = data.weatherElement[0].time[0]; //用來縮短下面的程式碼
+                        let cityName = data.locationName; // 地名
+                        let startTime = oao.startTime; // 開始時間
+                        let endTime = oao.endTime; // 結束時間
+                        let wx = oao.parameter.parameterName; // 天氣狀況
+                        let rain = data.weatherElement[1].time[0].parameter.parameterName; // 降雨機率
+                        let minT = data.weatherElement[2].time[0].parameter.parameterName; // 最低溫度
+                        let ci = data.weatherElement[3].time[0].parameter.parameterName; // 舒適度
+                        let maxT = data.weatherElement[4].time[0].parameter.parameterName; // 最高溫度
+
+                        this.orgData[cityName] = {
+                            start: startTime,
+                            end: endTime,
+                            wx: wx,
+                            max: maxT,
+                            min: minT,
+                            rain: rain,
+                            ci: ci,
+                        }
+
+                    });
+                },
+                setCity(i) {
+                    this.setIndex = i;
+                    console.log(i);
+                },
+            },
+        }).mount('#app')
+    </script>
+
+</body>
+
+</html>
